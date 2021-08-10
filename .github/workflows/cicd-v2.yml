@@ -11,10 +11,10 @@ defaults:
     shell: bash
 
 jobs:
-  directories: # Job that list subdirectories
+  setup:
     runs-on: ubuntu-latest
     outputs:
-      dir: ${{ steps.set-dirs.outputs.dir }} # generate output name dir by using inner step output
+      dir: ${{ steps.set-dirs.outputs.dir }}
     steps:
       - run: sudo apt-get update && sudo apt-get install --yes jq
       - uses: actions/checkout@v2
@@ -23,14 +23,17 @@ jobs:
       - id: set-dirs
         run: |
           DIRS=$(
-            ls -d */ | jq -R -s -c 'split("\n")[:-1]'
+            find ./src -maxdepth 2 -type f -name "main.tf" -print0 \
+              | xargs -0 -n1 dirname \
+              | sort --unique \
+              | jq --raw-input --compact-output --slurp 'split("\n")[:-1]'
           )
           echo ::set-output name=dir::$DIRS
   loop:
+    needs: [setup]
     runs-on: ubuntu-latest
-    needs: [directories] # Depends on previous job
     strategy:
       matrix:
-        dir: ${{ fromJSON(needs.directories.outputs.dir) }} # List matrix strategy from directories dynamically
+        dir: ${{ fromJSON(needs.setup.outputs.dir) }}
     steps:
       - run: echo ${{ matrix.dir }}
