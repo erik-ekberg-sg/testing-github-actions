@@ -29,10 +29,22 @@ jobs:
               | jq --raw-input --compact-output --slurp 'split("\n")[:-1]'
           )
           echo ::set-output name=dir::$DIRS
-  loop:
+
+  plan:
     needs: [setup]
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
+      matrix:
+        dir: ${{ fromJSON(needs.setup.outputs.dir) }}
+    steps:
+      - run: echo ${{ matrix.dir }}
+
+  apply:
+    needs: [plan]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
       matrix:
         dir: ${{ fromJSON(needs.setup.outputs.dir) }}
     steps:
