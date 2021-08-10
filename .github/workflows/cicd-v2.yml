@@ -17,10 +17,15 @@ jobs:
       dir: ${{ steps.set-dirs.outputs.dir }} # generate output name dir by using inner step output
     steps:
       - run: sudo apt-get update && sudo apt-get install --yes jq
-      - run: mkdir -p ./{test1,test2,test3,test4}
-      - id: set-dirs # Give it an id to handle to get step outputs in the outputs key above
-        run: echo "::set-output name=dir::$(ls -d */ | jq -R -s -c 'split("\n")[:-1]')"
-        # Define step output named dir base on ls command transformed to JSON thanks to jq
+      - uses: actions/checkout@v2
+        with:
+          ref: ${{ github.ref }}
+      - id: set-dirs
+        run: |
+          DIRS=$(
+            ls -d */ | jq -R -s -c 'split("\n")[:-1]'
+          )
+          echo ::set-output name=dir::$DIRS
   loop:
     runs-on: ubuntu-latest
     needs: [directories] # Depends on previous job
